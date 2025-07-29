@@ -58,7 +58,8 @@
     h2 {
       margin-top: 0;
       color: #dc3545;
-    }    form {
+    }
+    form {
       max-width: 800px;
     }
     label {
@@ -214,6 +215,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+  const API_URL = "https://sheetdb.io/api/v1/yg3eapqraogpe";
+
   const buttons = document.querySelectorAll('.sidebar button');
   const sections = document.querySelectorAll('.tab-content');
 
@@ -236,173 +239,266 @@
     });
   });
 
-  let machineData = JSON.parse(localStorage.getItem("machineData")) || [];
+  let machineData = [];
 
-  function saveToLocal() {
-    localStorage.setItem("machineData", JSON.stringify(machineData));
+  // Fetch data from API on load
+  async function fetchMachineData() {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error("Failed to fetch data from API");
+      const data = await res.json();
+
+      // Normalize data keys to match your internal keys
+      machineData = data.map(item => ({
+        sn: item.SN || "",
+        machineId: item["機械ID"]?.trim() || item["Machine ID"]?.trim() || "",
+        machineName: item["機械名"] || item["Machine Name"] || "",
+        version: item["バージョン"] || item["Version"] || "",
+        location: item["設置場所"] || item["Location"] || "",
+        inspector: item["点検者"] || item["Inspector"] || "",
+        status: item["状態"] || item["Status"] || "",
+        repairDate: item["修理日"] || item["Repair Date"] || "",
+        replacement: item["交換部品"] || item["Replacement Parts"] || "",
+        remarks: item["備考"] || item["Remarks"] || ""
+      }));
+
+      console.log("Machine Data loaded from API:", machineData);
+    } catch (error) {
+      alert("Error loading data from API: " + error.message);
+    }
   }
 
-  document.getElementById("addDataForm").addEventListener("submit", function(e) {
+  fetchMachineData();
+
+  // Add Data Form Submission
+  document.getElementById('addDataForm').addEventListener('submit', e => {
     e.preventDefault();
-    const formData = Object.fromEntries(new FormData(this).entries());
+    const form = e.target;
 
-    // Normalize machineId
-    formData.machineId = String(formData.machineId).trim();
+    const newMachine = {
+      sn: form.sn.value.trim(),
+      machineId: form.machineId.value.trim(),
+      machineName: form.machineName.value.trim(),
+      version: form.version.value.trim(),
+      location: form.location.value.trim(),
+      inspector: form.inspector.value.trim(),
+      status: form.status.value,
+      repairDate: form.repairDate.value,
+      replacement: form.replacement.value.trim(),
+      remarks: form.remarks.value.trim()
+    };
 
-    machineData.push(formData);
-    saveToLocal();
-    alert("Machine data added!");
-    this.reset();
+    // Check for duplicates by SN or machineId
+    if (machineData.some(m => m.sn === newMachine.sn || m.machineId === newMachine.machineId)) {
+      alert("Duplicate SN or Machine ID found. Please use unique values.");
+      return;
+    }
+
+    machineData.push(newMachine);
+    alert("Data added locally. Note: Changes are not saved to remote API automatically.");
+    form.reset();
   });
 
+  // REMOVE DATA functions
+  function searchAndShowForRemoval() {
+    const id = document.getElementById('removeSearchInput').value.trim();
+    const resultDiv = document.getElementById('removeResult');
+    resultDiv.innerHTML = "";
+
+    if (!id) {
+      alert("Please enter a Machine ID to search.");
+      return;
+    }
+
+    const found = machineData.find(m => m.machineId === id);
+    if (!found) {
+      resultDiv.innerHTML = `<p>No machine found with Machine ID: ${id}</p>`;
+      return;
+    }
+
+    resultDiv.innerHTML = `
+  <div class="result-card">
+    <label>SN</label><input type="text" value="${found.sn}" readonly>
+    <label>機械ID (Machine ID)</label><input type="text" value="${found.machineId}" readonly>
+    <label>機械名 (Machine Name)</label><input type="text" value="${found.machineName}" readonly>
+    <label>バージョン (Version)</label><input type="text" value="${found.version}" readonly>
+    <label>設置場所 (Location)</label><input type="text" value="${found.location}" readonly>
+    <label>点検者 (Inspector)</label><input type="text" value="${found.inspector}" readonly>
+    <label>状態 (Status)</label><input type="text" value="${found.status}" readonly>
+    <label>修理日 (Repair Date)</label><input type="text" value="${found.repairDate}" readonly>
+    <label>交換部品 (Replacement Parts)</label><input type="text" value="${found.replacement}" readonly>
+    <label>備考 (Remarks)</label><textarea readonly rows="3">${found.remarks}</textarea>
+    <button onclick="removeMachine('${found.machineId}')" class="submit-btn">Remove / 削除</button>
+  </div>
+`;
+
+  }
+
+  function removeMachine(machineId) {
+    if (!confirm("Are you sure you want to delete this machine data? / 本当に削除しますか？")) return;
+    machineData = machineData.filter(m => m.machineId !== machineId);
+    alert("Data removed locally. Note: Changes are not saved to remote API automatically.");
+    document.getElementById('removeResult').innerHTML = "";
+    document.getElementById('removeSearchInput').value = "";
+  }
+
+  // EDIT DATA functions
+  function searchAndShowForEdit() {
+    const id = document.getElementById('editSearchInput').value.trim();
+    const resultDiv = document.getElementById('editResult');
+    resultDiv.innerHTML = "";
+
+    if (!id) {
+      alert("Please enter a Machine ID to search.");
+      return;
+    }
+
+    const found = machineData.find(m => m.machineId === id);
+    if (!found) {
+      resultDiv.innerHTML = `<p>No machine found with Machine ID: ${id}</p>`;
+      return;
+    }
+
+    resultDiv.innerHTML = `
+      <form id="editForm" autocomplete="off">
+        <label for="editSn">SN</label>
+        <input type="text" id="editSn" value="${found.sn}" required readonly>
+
+        <label for="editMachineId">機械ID (Machine ID)</label>
+        <input type="text" id="editMachineId" value="${found.machineId}" required readonly>
+
+        <label for="editMachineName">機械名 (Machine Name)</label>
+        <input type="text" id="editMachineName" value="${found.machineName}" required>
+
+        <label for="editVersion">バージョン (Version)</label>
+        <input type="text" id="editVersion" value="${found.version}" required>
+
+        <label for="editLocation">設置場所 (Location)</label>
+        <input type="text" id="editLocation" value="${found.location}">
+
+        <label for="editInspector">点検者 (Inspector)</label>
+        <input type="text" id="editInspector" value="${found.inspector}">
+
+        <label for="editStatus">状態 (Status)</label>
+        <select id="editStatus" required>
+          <option value="operational" ${found.status === 'operational' ? 'selected' : ''}>Operational / 稼働中</option>
+          <option value="maintenance" ${found.status === 'maintenance' ? 'selected' : ''}>Maintenance / メンテナンス中</option>
+          <option value="offline" ${found.status === 'offline' ? 'selected' : ''}>Offline / オフライン</option>
+        </select>
+
+        <label for="editRepairDate">修理日 (Repair Date)</label>
+        <input type="date" id="editRepairDate" value="${found.repairDate}">
+
+        <label for="editReplacement">交換部品 (Replacement Parts)</label>
+        <input type="text" id="editReplacement" value="${found.replacement}">
+
+        <label for="editRemarks">備考 (Remarks)</label>
+        <textarea id="editRemarks" rows="3">${found.remarks}</textarea>
+
+        <button type="submit" class="submit-btn">Update / 更新</button>
+      </form>
+    `;
+
+    document.getElementById('editForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const idx = machineData.findIndex(m => m.machineId === id);
+      if (idx === -1) {
+        alert("Machine not found.");
+        return;
+      }
+      machineData[idx].machineName = document.getElementById('editMachineName').value.trim();
+      machineData[idx].version = document.getElementById('editVersion').value.trim();
+      machineData[idx].location = document.getElementById('editLocation').value.trim();
+      machineData[idx].inspector = document.getElementById('editInspector').value.trim();
+      machineData[idx].status = document.getElementById('editStatus').value;
+      machineData[idx].repairDate = document.getElementById('editRepairDate').value;
+      machineData[idx].replacement = document.getElementById('editReplacement').value.trim();
+      machineData[idx].remarks = document.getElementById('editRemarks').value.trim();
+
+      alert("Data updated locally. Note: Changes are not saved to remote API automatically.");
+      document.getElementById('editResult').innerHTML = "";
+      document.getElementById('editSearchInput').value = "";
+    });
+  }
+
+  // Change Credentials Form
+  const credsForm = document.getElementById('changeCredsForm');
+  credsForm.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const oldUser = document.getElementById('oldUsername').value.trim();
+    const oldPass = document.getElementById('oldPassword').value.trim();
+    const newUser = document.getElementById('newUsername').value.trim();
+    const newPass = document.getElementById('newPassword').value.trim();
+    const message = document.getElementById('credsMessage');
+
+    // For demo, store credentials in localStorage
+    const storedUser = localStorage.getItem('adminUser') || 'admin';
+    const storedPass = localStorage.getItem('adminPass') || 'password';
+
+    if (oldUser !== storedUser || oldPass !== storedPass) {
+      message.style.color = 'red';
+      message.textContent = 'Old username or password is incorrect.';
+      return;
+    }
+
+    localStorage.setItem('adminUser', newUser);
+    localStorage.setItem('adminPass', newPass);
+
+    message.style.color = 'green';
+    message.textContent = 'Credentials updated successfully!';
+    credsForm.reset();
+  });
+
+  // Excel upload handler
   function handleExcelUpload() {
     const fileInput = document.getElementById('excelFile');
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Please select an Excel file first.");
+      return;
+    }
+
     const file = fileInput.files[0];
-    if (!file) return alert("Please select a file.");
-
     const reader = new FileReader();
-    reader.onload = function (e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
 
-      const fieldMap = {
-        "SN": "sn",
-        "機械ID": "machineId", "Machine ID": "machineId",
-        "機械名": "machineName", "Machine Name": "machineName",
-        "バージョン": "version", "Version": "version",
-        "設置場所": "location", "Location": "location",
-        "点検者": "inspector", "Inspector": "inspector",
-        "状態": "status", "Status": "status",
-        "修理日": "repairDate", "Repair Date": "repairDate",
-        "交換部品": "replacement", "Replacement Parts": "replacement",
-        "備考": "remarks", "Remarks": "remarks"
-      };
+    reader.onload = function(e) {
+      const data = e.target.result;
+      const workbook = XLSX.read(data, {type: 'binary'});
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet);
 
-      const formattedRows = rows.map(row => {
-        const newRow = {};
-        for (const key in row) {
-          const mappedKey = fieldMap[key.trim()];
-          if (mappedKey) {
-            newRow[mappedKey] = mappedKey === "machineId"
-              ? String(row[key]).trim()
-              : row[key];
-          }
+      json.forEach(row => {
+        // Map Excel columns to internal keys
+        const newEntry = {
+          sn: row.SN || "",
+          machineId: (row["機械ID"] || row["Machine ID"] || "").trim(),
+          machineName: row["機械名"] || row["Machine Name"] || "",
+          version: row["バージョン"] || row["Version"] || "",
+          location: row["設置場所"] || row["Location"] || "",
+          inspector: row["点検者"] || row["Inspector"] || "",
+          status: row["状態"] || row["Status"] || "",
+          repairDate: row["修理日"] || row["Repair Date"] || "",
+          replacement: row["交換部品"] || row["Replacement Parts"] || "",
+          remarks: row["備考"] || row["Remarks"] || ""
+        };
+
+        if (!newEntry.machineId) return; // skip invalid row
+
+        // Avoid duplicates
+        if (!machineData.some(m => m.machineId === newEntry.machineId)) {
+          machineData.push(newEntry);
         }
-        return newRow;
       });
 
-      machineData = machineData.concat(formattedRows);
-      saveToLocal();
-      alert("Excel uploaded and processed successfully.");
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  function searchAndShowForRemoval() {
-  const input = document.getElementById("removeSearchInput").value.trim();
-  const container = document.getElementById("removeResult");
-  container.innerHTML = "";
-
-  const index = machineData.findIndex(item => String(item.machineId).trim() === input);
-  if (index !== -1) {
-    const item = machineData[index];
-
-    const keyLabels = {
-      sn: "SN",
-      machineId: "Machine ID / 機械ID",
-      machineName: "Machine Name / 機械名",
-      version: "Version / バージョン",
-      location: "Location / 設置場所",
-      inspector: "Inspector / 点検者",
-      status: "Status / 状態",
-      repairDate: "Repair Date / 修理日",
-      replacement: "Replacement Parts / 交換部品",
-      remarks: "Remarks / 備考"
+      alert("Excel data uploaded locally. Note: Changes are not saved to remote API automatically.");
+      fileInput.value = "";
     };
 
-    let display = `
-      <div class="result-card">
-        <div style="display: grid; grid-template-columns: 400px 1fr; row-gap: 30px; column-gap: 20px;">`;
-
-    for (let key in item) {
-      const label = keyLabels[key] || key;
-      display += `
-        <div style="font-weight: bold; color: #444;">${label}</div>
-        <div>${item[key] || '-'}</div>`;
-    }
-
-    display += `
-        </div>
-        <button class="submit-btn" onclick="removeMachine(${index})" style="margin-top: 20px;">Remove</button>
-      </div>`;
-
-    container.innerHTML = display;
-  } else {
-    container.textContent = "No machine found.";
-  }
-}
-
-
-
-  function removeMachine(index) {
-    if (confirm("Are you sure to remove this machine?")) {
-      machineData.splice(index, 1);
-      saveToLocal();
-      document.getElementById("removeResult").innerHTML = "Removed successfully.";
-    }
+    reader.readAsBinaryString(file);
   }
 
-  function searchAndShowForEdit() {
-    const input = document.getElementById("editSearchInput").value.trim();
-    const container = document.getElementById("editResult");
-    container.innerHTML = "";
-    const index = machineData.findIndex(item => String(item.machineId).trim() === input);
-    if (index !== -1) {
-      const item = machineData[index];
-      let form = `<form id="editForm" class="result-card" autocomplete="off">`;
-      for (let key in item) {
-        const isTextarea = key === "remarks";
-        form += `<label for="${key}">${key}</label>
-          ${isTextarea ?
-            `<textarea name="${key}" rows="3" autocomplete="off">${item[key]}</textarea>` :
-            `<input type="text" name="${key}" value="${item[key]}" autocomplete="off">`}`;
-      }
-      form += `<button type="submit" class="submit-btn">Update</button></form>`;
-      container.innerHTML = form;
-
-      document.getElementById("editForm").addEventListener("submit", function(e) {
-        e.preventDefault();
-        const updated = Object.fromEntries(new FormData(this).entries());
-        updated.machineId = String(updated.machineId).trim(); // Normalize
-        machineData[index] = updated;
-        saveToLocal();
-        alert("Updated successfully.");
-        container.innerHTML = "";
-      });
-    } else {
-      container.textContent = "Machine ID not found.";
-    }
-  }
-
-  document.getElementById("changeCredsForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const oldU = document.getElementById("oldUsername").value.trim();
-    const oldP = document.getElementById("oldPassword").value;
-    const newU = document.getElementById("newUsername").value.trim();
-    const newP = document.getElementById("newPassword").value;
-
-    const creds = JSON.parse(localStorage.getItem("adminCredentials")) || { username: "admin", password: "Sujan123" };
-
-    if (oldU === creds.username && oldP === creds.password) {
-      localStorage.setItem("adminCredentials", JSON.stringify({ username: newU, password: newP }));
-      document.getElementById("credsMessage").innerHTML = "<span style='color:green;'>Updated successfully!</span>";
-      this.reset();
-    } else {
-      document.getElementById("credsMessage").innerHTML = "<span style='color:red;'>Old credentials incorrect.</span>";
-    }
-  });
-
+  // Home button function
   function goHome() {
     window.location.href = "index.html";
   }
