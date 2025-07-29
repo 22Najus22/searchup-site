@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Search - Machine Status Checker</title>
   <style>
+    /* Your existing CSS unchanged */
     body {
       font-family: "Segoe UI", Roboto, sans-serif;
       background-image: url('h.png');
@@ -15,7 +16,6 @@
       margin: 40px;
       color: #222;
     }
-
     .container {
       max-width: 950px;
       margin: auto;
@@ -25,7 +25,6 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
-
     h1 {
       margin-bottom: 40px;
       font-size: 2.8em;
@@ -33,7 +32,6 @@
       color: #333;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
-
     label {
       font-size: 1.4em;
       font-weight: bold;
@@ -42,7 +40,6 @@
       text-align: left;
       margin-bottom: 8px;
     }
-
     input[type="text"] {
       width: 100%;
       padding: 16px;
@@ -53,7 +50,6 @@
       box-sizing: border-box;
       text-align: left;
     }
-
     .result-card {
       margin-top: 30px;
       background: #f0f8ff;
@@ -63,27 +59,23 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
       text-align: left;
     }
-
     .result-card h2 {
       text-align: center;
       color: #005a9e;
       font-size: 1.8em;
       margin-bottom: 25px;
     }
-
     .result-card table {
       width: 100%;
       border-collapse: collapse;
       font-size: 1.25em;
     }
-
     .result-card th,
     .result-card td {
       padding: 14px 18px;
       border-bottom: 1px solid #ccc;
       vertical-align: top;
     }
-
     .result-card th {
       background: #e6f2ff;
       color: #005a9e;
@@ -91,17 +83,14 @@
       width: 35%;
       text-align: left;
     }
-
     .result-card tr:hover {
       background-color: #e9f7ff;
     }
-
     .message {
       font-size: 1.3em;
       color: #cc0000;
       margin-top: 30px;
     }
-
     #searchAgainBtn, #homeBtn {
       margin-top: 20px;
       padding: 12px 24px;
@@ -117,20 +106,16 @@
       color: white;
       user-select: none;
     }
-
     #searchAgainBtn {
       background: #007acc;
     }
-
     #searchAgainBtn:hover {
       background: #005a9e;
     }
-
     #homeBtn {
       background: #555555;
       margin-top: 12px;
     }
-
     #homeBtn:hover {
       background: #333333;
     }
@@ -149,24 +134,25 @@
   </div>
 
 <script>
-  const machineData = JSON.parse(localStorage.getItem("machineData")) || [];
-
+  // Labels for display - keys are trimmed, matching normalized keys
   const keyLabels = {
-    sn: "SN",
-    machineId: "Machine ID / 機械ID",
-    machineName: "Machine Name / 機械名",
-    version: "Version / バージョン",
-    location: "Location / 設置場所",
-    inspector: "Inspector / 点検者",
-    status: "Status / 状態",
-    repairDate: "Repair Date / 修理日",
-    replacement: "Replacement Parts / 交換部品",
-    remarks: "Remarks / 備考"
+    SN: "SN",
+    "Machine ID": "Machine ID / 機械ID",
+    "Machine Name": "Machine Name / 機械名",
+    Version: "Version / バージョン",
+    Location: "Location / 設置場所",
+    Inspector: "Inspector / 点検者",
+    Status: "Status / 状態",
+    "Repair Date": "Repair Date / 修理日",
+    "Replacement Parts": "Replacement Parts / 交換部品",
+    Remarks: "Remarks / 備考"
   };
 
   const input = document.getElementById("machineIdInput");
   const resultContainer = document.getElementById("resultContainer");
   const searchAgainBtn = document.getElementById("searchAgainBtn");
+
+  let machineData = [];
 
   function clearResults() {
     resultContainer.innerHTML = "";
@@ -194,28 +180,56 @@
     input.focus();
   });
 
-  let debounceTimeout;
+  // Normalize keys to trim trailing spaces
+  function normalizeKeys(obj) {
+    const newObj = {};
+    for (const key in obj) {
+      newObj[key.trim()] = obj[key];
+    }
+    return newObj;
+  }
+
+  // Load all machine data on page load
+  async function loadMachineData() {
+    try {
+      const res = await fetch('https://sheetdb.io/api/v1/yg3eapqraogpe');
+      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+      let data = await res.json();
+      // Normalize keys
+      machineData = data.map(normalizeKeys);
+      console.log("Loaded and normalized machine data:", machineData);
+    } catch (err) {
+      resultContainer.innerHTML = `<p class="message">Failed to load machine data. Please try again later.</p>`;
+      console.error("Failed to fetch machine data:", err);
+    }
+  }
+
   input.addEventListener("input", () => {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => {
-      const query = input.value.trim();
+    clearTimeout(input._debounceTimeout);
+    input._debounceTimeout = setTimeout(() => {
+      const query = input.value.trim().toLowerCase();
       clearResults();
       searchAgainBtn.style.display = "none";
 
       if (query === "") return;
 
-      // Case-insensitive exact match
-      const found = machineData.find(item => String(item.machineId).trim().toLowerCase() === query.toLowerCase());
+      // Find machine ignoring case on normalized keys
+      const found = machineData.find(item =>
+        item["Machine ID"] && item["Machine ID"].toLowerCase() === query
+      );
 
       if (found) {
         resultContainer.innerHTML = createTable(found);
         searchAgainBtn.style.display = "inline-block";
       } else {
-        resultContainer.innerHTML = `<p class="message">No machine found with ID "${query}" / ID「${query}」の機械は見つかりませんでした。</p>`;
+        resultContainer.innerHTML = `<p class="message">No machine found with ID "${input.value.trim()}" / ID「${input.value.trim()}」の機械は見つかりませんでした。</p>`;
         searchAgainBtn.style.display = "inline-block";
       }
     }, 300);
   });
+
+  // Start by loading the machine data from API
+  loadMachineData();
 </script>
 </body>
 </html>
