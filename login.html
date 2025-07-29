@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel - Machine Status Checker</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #f5f8fa;
+      color: #222;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 220px;
+      background-color: #dc3545;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding-top: 40px;
+      box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+    }
+    .sidebar button {
+      background: none;
+      border: none;
+      color: white;
+      padding: 18px 25px;
+      font-size: 1.1em;
+      text-align: left;
+      cursor: pointer;
+      border-left: 4px solid transparent;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    .sidebar button:hover,
+    .sidebar button.active {
+      background-color: #c82333;
+      border-left: 4px solid #005fcc;
+    }
+    .sidebar button:last-child {
+      margin-top: auto;
+      background-color: #343a40;
+    }
+    .sidebar button:last-child:hover {
+      background-color: #23272b;
+    }
+    .content {
+      flex-grow: 1;
+      padding: 40px 50px;
+      overflow-y: auto;
+      background: white;
+    }
+    h2 {
+      margin-top: 0;
+      color: #dc3545;
+    }    form {
+      max-width: 800px;
+    }
+    label {
+      display: block;
+      margin: 15px 0 6px 0;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    input[type="text"], input[type="password"], input[type="date"], select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.8px solid #ccc;
+      border-radius: 7px;
+      font-size: 1em;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #005fcc;
+      outline: none;
+    }
+    button.submit-btn {
+      margin-top: 25px;
+      background-color: #dc3545;
+      border: none;
+      padding: 16px 28px;
+      font-size: 1.15em;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    button.submit-btn:hover {
+      background-color: #c82333;
+      transform: scale(1.05);
+    }
+    .result-card {
+      background: #fdfdfd;
+      border: 1.5px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    .result-card label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 0.95em;
+      color: #444;
+    }
+    .result-card input,
+    .result-card textarea {
+      width: 100%;
+      margin-top: 5px;
+      padding: 10px 12px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .result-card button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+ <nav class="sidebar">
+    <button class="active" data-target="addData">Add Data / データ追加</button>
+    <button data-target="removeData">Remove Data / データ削除</button>
+    <button data-target="editData">Edit Data / データ編集</button>
+    <button data-target="changeCreds">Change Username & Password / ユーザー名とパスワードの変更</button>
+    <!-- ✅ Home Button Added Below -->
+    <button onclick="goHome()">🏠 Home / ホームに戻る</button>
+  </nav>
+  <main class="content">
+    <!-- ADD DATA -->
+    <section id="addData" class="tab-content">
+      <h2>Add Data / データ追加</h2>
+      <div style="margin-bottom: 30px; padding: 20px; border: 2px dashed #ccc; border-radius: 10px;">
+        <label for="excelFile">Upload Excel File / Excelファイルをアップロード</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" />
+        <p>Accepted columns: SN, 機械ID, 機械名, バージョン, 設置場所, 点検者, 状態, 修理日, 交換部品, 備考</p>
+        <button onclick="handleExcelUpload()" class="submit-btn">Upload / アップロード</button>
+      </div>
+      <form id="addDataForm" autocomplete="off">
+        <label for="sn">SN</label>
+        <input type="text" name="sn" required autocomplete="off">
+        <label for="machineId">機械ID (Machine ID)</label>
+        <input type="text" name="machineId" required autocomplete="off">
+        <label for="machineName">機械名 (Machine Name)</label>
+        <input type="text" name="machineName" required autocomplete="off">
+        <label for="version">バージョン (Version)</label>
+        <input type="text" name="version" required autocomplete="off">
+        <label for="location">設置場所 (Location)</label>
+        <input type="text" name="location" autocomplete="off">
+        <label for="inspector">点検者 (Inspector)</label>
+        <input type="text" name="inspector" autocomplete="off">
+        <label for="status">状態 (Status)</label>
+        <select name="status" required>
+          <option value="" disabled selected>Select status</option>
+          <option value="operational">Operational / 稼働中</option>
+          <option value="maintenance">Maintenance / メンテナンス中</option>
+          <option value="offline">Offline / オフライン</option>
+        </select>
+        <label for="repairDate">修理日 (Repair Date)</label>
+        <input type="date" name="repairDate" autocomplete="off">
+        <label for="replacement">交換部品 (Replacement Parts)</label>
+        <input type="text" name="replacement" autocomplete="off">
+        <label for="remarks">備考 (Remarks)</label>
+        <textarea name="remarks" rows="3" autocomplete="off"></textarea>
+        <button type="submit" class="submit-btn">Add / 追加</button>
+      </form>
+    </section>
+
+    <!-- REMOVE DATA -->
+    <section id="removeData" class="tab-content" hidden>
+      <h2>Remove Data / データ削除</h2>
+      <label>Search by Machine ID:</label>
+      <input type="text" id="removeSearchInput" placeholder="Enter Machine ID" autocomplete="off">
+      <button onclick="searchAndShowForRemoval()" class="submit-btn">Search / 検索</button>
+      <div id="removeResult"></div>
+    </section>
+
+    <!-- EDIT DATA -->
+    <section id="editData" class="tab-content" hidden>
+      <h2>Edit Data / データ編集</h2>
+      <label>Search by Machine ID:</label>
+      <input type="text" id="editSearchInput" placeholder="Enter Machine ID" autocomplete="off">
+      <button onclick="searchAndShowForEdit()" class="submit-btn">Search / 検索</button>
+      <div id="editResult"></div>
+    </section>
+
+    <!-- CHANGE CREDENTIALS -->
+    <section id="changeCreds" class="tab-content" hidden>
+      <h2>Change Username & Password / ユーザー名とパスワードの変更</h2>
+      <form id="changeCredsForm" autocomplete="off">
+        <label for="oldUsername">Old Username</label>
+        <input type="text" id="oldUsername" required autocomplete="off">
+        <label for="oldPassword">Old Password</label>
+        <input type="password" id="oldPassword" required autocomplete="off">
+        <label for="newUsername">New Username</label>
+        <input type="text" id="newUsername" required autocomplete="off">
+        <label for="newPassword">New Password</label>
+        <input type="password" id="newPassword" required autocomplete="off">
+        <button type="submit" class="submit-btn">Update Credentials / 資格情報の更新</button>
+      </form>
+      <p id="credsMessage" style="margin-top: 20px;"></p>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  const buttons = document.querySelectorAll('.sidebar button');
+  const sections = document.querySelectorAll('.tab-content');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.hidden = true);
+
+      document.getElementById("removeSearchInput").value = "";
+      document.getElementById("removeResult").innerHTML = "";
+
+      document.getElementById("editSearchInput").value = "";
+      document.getElementById("editResult").innerHTML = "";
+
+      document.getElementById("changeCredsForm").reset();
+      document.getElementById("credsMessage").innerHTML = "";
+
+      btn.classList.add('active');
+      document.getElementById(btn.getAttribute('data-target')).hidden = false;
+    });
+  });
+
+  let machineData = JSON.parse(localStorage.getItem("machineData")) || [];
+
+  function saveToLocal() {
+    localStorage.setItem("machineData", JSON.stringify(machineData));
+  }
+
+  document.getElementById("addDataForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(this).entries());
+
+    // Normalize machineId
+    formData.machineId = String(formData.machineId).trim();
+
+    machineData.push(formData);
+    saveToLocal();
+    alert("Machine data added!");
+    this.reset();
+  });
+
+  function handleExcelUpload() {
+    const fileInput = document.getElementById('excelFile');
+    const file = fileInput.files[0];
+    if (!file) return alert("Please select a file.");
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
+
+      const fieldMap = {
+        "SN": "sn",
+        "機械ID": "machineId", "Machine ID": "machineId",
+        "機械名": "machineName", "Machine Name": "machineName",
+        "バージョン": "version", "Version": "version",
+        "設置場所": "location", "Location": "location",
+        "点検者": "inspector", "Inspector": "inspector",
+        "状態": "status", "Status": "status",
+        "修理日": "repairDate", "Repair Date": "repairDate",
+        "交換部品": "replacement", "Replacement Parts": "replacement",
+        "備考": "remarks", "Remarks": "remarks"
+      };
+
+      const formattedRows = rows.map(row => {
+        const newRow = {};
+        for (const key in row) {
+          const mappedKey = fieldMap[key.trim()];
+          if (mappedKey) {
+            newRow[mappedKey] = mappedKey === "machineId"
+              ? String(row[key]).trim()
+              : row[key];
+          }
+        }
+        return newRow;
+      });
+
+      machineData = machineData.concat(formattedRows);
+      saveToLocal();
+      alert("Excel uploaded and processed successfully.");
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function searchAndShowForRemoval() {
+  const input = document.getElementById("removeSearchInput").value.trim();
+  const container = document.getElementById("removeResult");
+  container.innerHTML = "";
+
+  const index = machineData.findIndex(item => String(item.machineId).trim() === input);
+  if (index !== -1) {
+    const item = machineData[index];
+
+    const keyLabels = {
+      sn: "SN",
+      machineId: "Machine ID / 機械ID",
+      machineName: "Machine Name / 機械名",
+      version: "Version / バージョン",
+      location: "Location / 設置場所",
+      inspector: "Inspector / 点検者",
+      status: "Status / 状態",
+      repairDate: "Repair Date / 修理日",
+      replacement: "Replacement Parts / 交換部品",
+      remarks: "Remarks / 備考"
+    };
+
+    let display = `
+      <div class="result-card">
+        <div style="display: grid; grid-template-columns: 400px 1fr; row-gap: 30px; column-gap: 20px;">`;
+
+    for (let key in item) {
+      const label = keyLabels[key] || key;
+      display += `
+        <div style="font-weight: bold; color: #444;">${label}</div>
+        <div>${item[key] || '-'}</div>`;
+    }
+
+    display += `
+        </div>
+        <button class="submit-btn" onclick="removeMachine(${index})" style="margin-top: 20px;">Remove</button>
+      </div>`;
+
+    container.innerHTML = display;
+  } else {
+    container.textContent = "No machine found.";
+  }
+}
+
+
+
+  function removeMachine(index) {
+    if (confirm("Are you sure to remove this machine?")) {
+      machineData.splice(index, 1);
+      saveToLocal();
+      document.getElementById("removeResult").innerHTML = "Removed successfully.";
+    }
+  }
+
+  function searchAndShowForEdit() {
+    const input = document.getElementById("editSearchInput").value.trim();
+    const container = document.getElementById("editResult");
+    container.innerHTML = "";
+    const index = machineData.findIndex(item => String(item.machineId).trim() === input);
+    if (index !== -1) {
+      const item = machineData[index];
+      let form = `<form id="editForm" class="result-card" autocomplete="off">`;
+      for (let key in item) {
+        const isTextarea = key === "remarks";
+        form += `<label for="${key}">${key}</label>
+          ${isTextarea ?
+            `<textarea name="${key}" rows="3" autocomplete="off">${item[key]}</textarea>` :
+            `<input type="text" name="${key}" value="${item[key]}" autocomplete="off">`}`;
+      }
+      form += `<button type="submit" class="submit-btn">Update</button></form>`;
+      container.innerHTML = form;
+
+      document.getElementById("editForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const updated = Object.fromEntries(new FormData(this).entries());
+        updated.machineId = String(updated.machineId).trim(); // Normalize
+        machineData[index] = updated;
+        saveToLocal();
+        alert("Updated successfully.");
+        container.innerHTML = "";
+      });
+    } else {
+      container.textContent = "Machine ID not found.";
+    }
+  }
+
+  document.getElementById("changeCredsForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const oldU = document.getElementById("oldUsername").value.trim();
+    const oldP = document.getElementById("oldPassword").value;
+    const newU = document.getElementById("newUsername").value.trim();
+    const newP = document.getElementById("newPassword").value;
+
+    const creds = JSON.parse(localStorage.getItem("adminCredentials")) || { username: "admin", password: "Sujan123" };
+
+    if (oldU === creds.username && oldP === creds.password) {
+      localStorage.setItem("adminCredentials", JSON.stringify({ username: newU, password: newP }));
+      document.getElementById("credsMessage").innerHTML = "<span style='color:green;'>Updated successfully!</span>";
+      this.reset();
+    } else {
+      document.getElementById("credsMessage").innerHTML = "<span style='color:red;'>Old credentials incorrect.</span>";
+    }
+  });
+
+  function goHome() {
+    window.location.href = "index.html";
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Search - Machine Status Checker</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background-image: url('h.PNG');
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: cover;
+      background-attachment: scroll;
+      margin: 40px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: auto;
+      background: #ffffffd9;
+      padding: 50px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 40px;
+      font-size: 2.8em;
+      font-weight: 700;
+      color: #333;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    label {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #333;
+      display: block;
+      text-align: left;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 30px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 1.2em;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .result-card {
+      margin-top: 30px;
+      background: #f0f8ff;
+      border: 2px solid #007acc;
+      border-radius: 14px;
+      padding: 30px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      text-align: left;
+    }
+
+    .result-card h2 {
+      text-align: center;
+      color: #005a9e;
+      font-size: 1.8em;
+      margin-bottom: 25px;
+    }
+
+    .result-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1.25em;
+    }
+
+    .result-card th,
+    .result-card td {
+      padding: 14px 18px;
+      border-bottom: 1px solid #ccc;
+      vertical-align: top;
+    }
+
+    .result-card th {
+      background: #e6f2ff;
+      color: #005a9e;
+      font-weight: 600;
+      width: 35%;
+      text-align: left;
+    }
+
+    .result-card tr:hover {
+      background-color: #e9f7ff;
+    }
+
+    .message {
+      font-size: 1.3em;
+      color: #cc0000;
+      margin-top: 30px;
+    }
+
+    #searchAgainBtn, #homeBtn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 122, 204, 0.4);
+      transition: background-color 0.3s ease;
+      display: inline-block;
+      min-width: 160px;
+      text-decoration: none;
+      color: white;
+      user-select: none;
+    }
+
+    #searchAgainBtn {
+      background: #007acc;
+    }
+
+    #searchAgainBtn:hover {
+      background: #005a9e;
+    }
+
+    #homeBtn {
+      background: #555555;
+      margin-top: 12px;
+    }
+
+    #homeBtn:hover {
+      background: #333333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Machine Status Search / 機械状態検索</h1>
+    <label for="machineIdInput">Enter Machine ID / 機械IDを入力してください:</label>
+    <input type="text" id="machineIdInput" placeholder="例: MCH-001" autocomplete="off" />
+
+    <div id="resultContainer"></div>
+
+    <button id="searchAgainBtn" style="display:none;">Search Again / 再検索</button>
+    <a href="index.html" id="homeBtn">Home / ホーム</a>
+  </div>
+
+<script>
+  const machineData = JSON.parse(localStorage.getItem("machineData")) || [];
+
+  const keyLabels = {
+    sn: "SN",
+    machineId: "Machine ID / 機械ID",
+    machineName: "Machine Name / 機械名",
+    version: "Version / バージョン",
+    location: "Location / 設置場所",
+    inspector: "Inspector / 点検者",
+    status: "Status / 状態",
+    repairDate: "Repair Date / 修理日",
+    replacement: "Replacement Parts / 交換部品",
+    remarks: "Remarks / 備考"
+  };
+
+  const input = document.getElementById("machineIdInput");
+  const resultContainer = document.getElementById("resultContainer");
+  const searchAgainBtn = document.getElementById("searchAgainBtn");
+
+  function clearResults() {
+    resultContainer.innerHTML = "";
+  }
+
+  function createTable(data) {
+    let html = `<div class="result-card"><h2>Search Result / 検索結果</h2><table>`;
+    for (const key in keyLabels) {
+      const label = keyLabels[key];
+      const value = data[key] ? data[key] : "-";
+      html += `
+        <tr>
+          <th>${label}</th>
+          <td>${value}</td>
+        </tr>`;
+    }
+    html += `</table></div>`;
+    return html;
+  }
+
+  searchAgainBtn.addEventListener("click", () => {
+    input.value = "";
+    clearResults();
+    searchAgainBtn.style.display = "none";
+    input.focus();
+  });
+
+  let debounceTimeout;
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      const query = input.value.trim();
+      clearResults();
+      searchAgainBtn.style.display = "none";
+
+      if (query === "") return;
+
+      // Case-insensitive exact match
+      const found = machineData.find(item => String(item.machineId).trim().toLowerCase() === query.toLowerCase());
+
+      if (found) {
+        resultContainer.innerHTML = createTable(found);
+        searchAgainBtn.style.display = "inline-block";
+      } else {
+        resultContainer.innerHTML = `<p class="message">No machine found with ID "${query}" / ID「${query}」の機械は見つかりませんでした。</p>`;
+        searchAgainBtn.style.display = "inline-block";
+      }
+    }, 300);
+  });
+</script>
+</body>
+</html>

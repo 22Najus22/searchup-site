@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Offline Machine Status Checker - check operational status via Machine ID" />
+  <title>Machine Status Checker</title>
+  <style>
+    /* Reset some default margins */
+    body, h1, h2, p {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-image: url('h.PNG');
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-attachment: scroll;
+      background-size: cover;
+      color: #000;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.6;
+
+      will-change: background-position;
+      background-color: #f0f0f0;
+    }
+    .container {
+      background: #fff;
+      color: #000;
+      max-width: 900px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, .language-block h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    h1 {
+      font-size: 2.8em;
+    }
+    .language-block {
+      margin-bottom: 40px;
+    }
+    .language-block h2 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .language-block p {
+      font-size: 1.2em;
+      color: #000;
+      text-shadow: none;
+      margin-bottom: 12px;
+    }
+    .button-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .button-container a {
+      text-decoration: none;
+    }
+    .button-container button {
+      padding: 16px 32px;
+      font-size: 20px;
+      margin: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      outline-offset: 3px;
+    }
+    .button-container button:focus {
+      outline: 3px solid #005fcc;
+      outline-offset: 4px;
+    }
+    .button-container button:hover {
+      transform: scale(1.05);
+    }
+    .button-container .search-btn {
+      background-color: #28a745;
+    }
+    .button-container .search-btn:hover {
+      background-color: #218838;
+    }
+    .button-container .admin-btn {
+      background-color: #dc3545;
+    }
+    .button-container .admin-btn:hover {
+      background-color: #c82333;
+    }
+    footer {
+      text-align: center;
+      font-size: 1.1em;
+      color: #444;
+      margin-top: 20px;
+      padding-bottom: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      body {
+        margin: 20px;
+      }
+      h1 {
+        font-size: 2em;
+      }
+      .language-block h2 {
+        font-size: 1.4em;
+      }
+      .language-block p {
+        font-size: 1em;
+      }
+      .button-container button {
+        padding: 14px 24px;
+        font-size: 18px;
+        margin: 8px;
+        width: 80%;
+        max-width: 300px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Machine Status Checker / マシンステータスチェッカー</h1>
+
+    <section class="language-block" lang="en">
+      <h2>Introduction (English)</h2>
+      <p>
+        Welcome to the Machine Status Checker. This offline search engine allows you to check the operational status of various machines using their unique Machine ID.
+      </p>
+      <p>
+        These machines are used in construction work and were initially developed by <strong>Komatsu</strong>. Specifically, the system monitors the controllers of machines used for underground digging—widely utilized in construction projects across Japan.
+      </p>
+      <p>
+        It is designed for environments where internet access is limited or unavailable—such as factories, remote field locations, or secure facilities.
+      </p>
+    </section>
+
+    <section class="language-block" lang="ja">
+      <h2>紹介 (Japanese)</h2>
+      <p>
+        ようこそ、マシンステータスチェッカーへ。このオフライン検索ツールでは、マシン固有のIDを入力することで、その稼働状態を確認できます。
+      </p>
+      <p>
+        これらのマシンは建設作業で使用されており、最初は<strong>コマツ</strong>によって開発されました。特に、地下掘削に使用されるマシンのコントローラーを監視するシステムであり、日本の建設プロジェクトで広く利用されています。
+      </p>
+      <p>
+        このツールは、工場、遠隔地、またはセキュリティが高い施設など、インターネット接続が制限または利用できない環境で使用するために設計されています。
+      </p>
+    </section>
+
+    <div class="button-container">
+      <a href="search.html" aria-label="Go to Search page">
+        <button class="search-btn" type="button">🔍 Search / 検索</button>
+      </a>
+      <a href="admin.html" aria-label="Go to Admin page">
+        <button class="admin-btn" type="button">🔐 Admin / 管理者</button>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Sujan. Version v1000.
+  </footer>
+</body>
+</html>

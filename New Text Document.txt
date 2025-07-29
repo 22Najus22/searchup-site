@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Machine Status Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: url('h.PNG') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.9);
+      color: #000;
+      max-width: 700px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .language-block {
+      margin-bottom: 40px;
+    }
+    .language-block h2 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .language-block p {
+      font-size: 1.05em;
+      color: #555;
+      line-height: 1.6;
+    }
+    .button-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .button-container a {
+      text-decoration: none;
+    }
+    .button-container button {
+      padding: 12px 24px;
+      font-size: 16px;
+      margin: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+    .button-container .search-btn {
+      background-color: #28a745;
+    }
+    .button-container .search-btn:hover {
+      background-color: #218838;
+    }
+    .button-container .admin-btn {
+      background-color: #dc3545;
+    }
+    .button-container .admin-btn:hover {
+      background-color: #c82333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Machine Status Checker / マシンステータスチェッカー</h1>
+
+    <div class="language-block">
+      <h2>Introduction (English)</h2>
+      <p>
+        Welcome to the Machine Status Checker. This offline search engine allows you to check the operational status of various machines using their unique Machine ID.
+      </p>
+      <p>
+        These machines are used in construction work and were initially developed by <strong>Komatsu</strong>. Specifically, the system monitors the controllers of machines used for underground digging—widely utilized in construction projects across Japan.
+      </p>
+      <p>
+        It is designed for environments where internet access is limited or unavailable—such as factories, remote field locations, or secure facilities.
+      </p>
+    </div>
+
+    <div class="language-block">
+      <h2>紹介 (Japanese)</h2>
+      <p>
+        ようこそ、マシンステータスチェッカーへ。このオフライン検索ツールでは、マシン固有のIDを入力することで、その稼働状態を確認できます。
+      </p>
+      <p>
+        これらのマシンは建設作業で使用されており、最初は<strong>コマツ</strong>によって開発されました。特に、地下掘削に使用されるマシンのコントローラーを監視するシステムであり、日本の建設プロジェクトで広く利用されています。
+      </p>
+      <p>
+        このツールは、工場、遠隔地、またはセキュリティが高い施設など、インターネット接続が制限または利用できない環境で使用するために設計されています。
+      </p>
+    </div>
+
+    <div class="button-container">
+      <a href="search.html">
+        <button class="search-btn">🔍 Search / 検索</button>
+      </a>
+      <a href="admin.html">
+        <button class="admin-btn">🔐 Admin / 管理者</button>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
